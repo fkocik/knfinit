@@ -160,9 +160,10 @@ int loop() {
 
 /* Process monitor bootstrap */
 int main(int argc, char* argv[]) {
-	int i, shutdown_complete, sig, countdown;
+	int i, shutdown_complete, sig;
 	int sigs[] = { SIGINT, SIGTERM, SIGCHLD };
 	pid_t pid;
+	time_t start;
 
 	dolog("KNF Init System %s (Built %s)",STR_VERSION,build_date());
 	if (argc < 2) {
@@ -191,25 +192,24 @@ int main(int argc, char* argv[]) {
 		return 4;
 	}
 
-	countdown = (SHUTDOWN_TIMEOUT / KILL_INTERVAL) + 1; // We don't want real time, do we ?
+	start = time(NULL);
 	sig = SIGTERM;
-	dolog("Initiating shutdown with %d signal %d sequence ...",countdown,sig);
+	dolog("Initiating shutdown with %d signal for %d seconds ...",sig,SHUTDOWN_TIMEOUT);
 	do {
 		shutdown_complete = 1;
 		for (i=0; i<services.sz; i++) {
 			pid = services.p[i].pid;
 			if (pid > 0) {
 				shutdown_complete = 0;
-				if (countdown < 0) {
+				if (time(NULL) - start > SHUTDOWN_TIMEOUT + (KILL_INTERVAL * 2)) {
 					dolog("Too many errors ! Aborting ...");
 					free(services.p);
 					services.p = NULL;
 					return 5;
-				} else if (countdown == 0) {
+				} else if (time(NULL) - start > SHUTDOWN_TIMEOUT) {
 					dolog("Now killing processes ...");
 					sig = SIGKILL;
 				}
-				countdown--;
 				if (kill(pid,sig) != 0) {
 					if (errno == ESRCH) {
 						dolog("Service %s (%d) seems to be down",services.p[i].command,pid);
