@@ -1,4 +1,6 @@
-# knfinit
+# KNF Init System
+
+[![Build Status](https://travis-ci.org/fkocik/knfinit.svg?branch=master)](https://travis-ci.org/fkocik/knfinit)
 
 Simple and Stupid Init system (PID 1) for multi services **Docker** containers.
 
